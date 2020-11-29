@@ -81,6 +81,9 @@ type QueryScanner struct {
 func NewQueryScanner(queryReader io.Reader) *QueryScanner {
 	scanner := bufio.NewScanner(queryReader)
 	onSplit := func(data []byte, atEOF bool) (advance int, token []byte, err error) {
+		if atEOF && len(data) == 0 {
+			return 0, nil, nil
+		}
 		for i := 0; i < len(data); i++ {
 			if data[i] == ';' {
 				return i + 1, data[:i], nil
