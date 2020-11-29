@@ -12,6 +12,7 @@ import (
 )
 
 type Config struct {
+	DSN      string
 	User     string
 	Password string
 	Host     string
@@ -27,15 +28,18 @@ func NewDefaultConfig() *Config {
 	}
 }
 
-func (c *Config) DSN() string {
-	return fmt.Sprintf(
-		"%s:%s@tcp(%s:%d)/%s",
-		c.User,
-		c.Password,
-		c.Host,
-		c.Port,
-		c.Database,
-	)
+func (c *Config) GetDSN() string {
+	if c.DSN == "" {
+		return fmt.Sprintf(
+			"%s:%s@tcp(%s:%d)/%s",
+			c.User,
+			c.Password,
+			c.Host,
+			c.Port,
+			c.Database,
+		)
+	}
+	return strings.TrimLeft(c.DSN, "mysql://")
 }
 
 type Executer struct {
@@ -44,7 +48,7 @@ type Executer struct {
 
 func New(config *Config) *Executer {
 	return &Executer{
-		dsn: config.DSN(),
+		dsn: config.GetDSN(),
 	}
 }
 

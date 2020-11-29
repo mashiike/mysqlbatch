@@ -20,6 +20,7 @@ func main() {
 	var (
 		versionFlag = flag.Bool("v", false, "show version info")
 	)
+	flag.StringVar(&conf.DSN, "dsn", "", "dsn format as [mysql://]user:pass@tcp(host:port)/dbname (default \"\")")
 	flag.StringVar(&conf.User, "u", "root", "username (default root)")
 	flag.IntVar(&conf.Port, "P", 3306, "mysql port (default 3306)")
 	flag.StringVar(&conf.Password, "p", "", "password")
