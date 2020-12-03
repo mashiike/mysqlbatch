@@ -39,7 +39,7 @@ func (c *Config) GetDSN() string {
 			c.Database,
 		)
 	}
-	return strings.TrimLeft(c.DSN, "mysql://")
+	return strings.TrimPrefix(c.DSN, "mysql://")
 }
 
 type Executer struct {
