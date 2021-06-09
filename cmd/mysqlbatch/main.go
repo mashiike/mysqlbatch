@@ -1,10 +1,13 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"log"
 	"os"
+	"os/signal"
+	"syscall"
 
 	"github.com/mashiike/mysqlbatch"
 )
@@ -37,9 +40,11 @@ func main() {
 	if flag.NArg() == 1 {
 		conf.Database = flag.Arg(0)
 	}
+	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGTERM|syscall.SIGHUP|syscall.SIGINT)
+	defer stop()
 
 	executer := mysqlbatch.New(conf)
-	if err := executer.Execute(os.Stdin); err != nil {
+	if err := executer.ExecuteContext(ctx, os.Stdin); err != nil {
 		log.Println(err)
 		os.Exit(1)
 	}

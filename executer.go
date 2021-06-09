@@ -2,6 +2,7 @@ package mysqlbatch
 
 import (
 	"bufio"
+	"context"
 	"database/sql"
 	"fmt"
 	"io"
@@ -53,6 +54,10 @@ func New(config *Config) *Executer {
 }
 
 func (e *Executer) Execute(queryReader io.Reader) error {
+	return e.ExecuteContext(context.Background(), queryReader)
+}
+
+func (e *Executer) ExecuteContext(ctx context.Context, queryReader io.Reader) error {
 
 	db, err := sql.Open("mysql", e.dsn)
 	if err != nil {
@@ -67,7 +72,7 @@ func (e *Executer) Execute(queryReader io.Reader) error {
 		if query == "" {
 			continue
 		}
-		if _, err := db.Exec(query); err != nil {
+		if _, err := db.ExecContext(ctx, query); err != nil {
 			return errors.Wrap(err, "execute query failed")
 		}
 	}
