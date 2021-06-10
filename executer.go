@@ -154,13 +154,17 @@ func (e *Executer) queryContext(ctx context.Context, query string) error {
 	}
 	rows := make([][]string, 0)
 	iRow := make([]interface{}, len(columns))
+	sRow := make([]sql.NullString, len(columns))
+	for i := range sRow {
+		iRow[i] = &sRow[i]
+	}
 	for iter.Next() {
-		row := make([]string, len(columns))
-		for i := range row {
-			iRow[i] = &row[i]
-		}
 		if err := iter.Scan(iRow...); err != nil {
 			return err
+		}
+		row := make([]string, len(columns))
+		for i := range row {
+			row[i] = sRow[i].String
 		}
 		rows = append(rows, row)
 	}
