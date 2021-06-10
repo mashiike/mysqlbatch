@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"strings"
+	"time"
 
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/pkg/errors"
@@ -32,7 +33,7 @@ func NewDefaultConfig() *Config {
 func (c *Config) GetDSN() string {
 	if c.DSN == "" {
 		return fmt.Sprintf(
-			"%s:%s@tcp(%s:%d)/%s",
+			"%s:%s@tcp(%s:%d)/%s?parseTime=true",
 			c.User,
 			c.Password,
 			c.Host,
@@ -44,7 +45,8 @@ func (c *Config) GetDSN() string {
 }
 
 type Executer struct {
-	dsn string
+	dsn             string
+	lastExecuteTime time.Time
 }
 
 func New(config *Config) *Executer {
@@ -76,7 +78,18 @@ func (e *Executer) ExecuteContext(ctx context.Context, queryReader io.Reader) er
 			return errors.Wrap(err, "execute query failed")
 		}
 	}
-	return errors.Wrap(scanner.Err(), "query scanner err")
+	if err := scanner.Err(); err != nil {
+		return errors.Wrap(scanner.Err(), "query scanner err")
+	}
+	row := db.QueryRowContext(ctx, "SELECT NOW()")
+	if err := row.Err(); err != nil {
+		return errors.Wrap(err, "get db time")
+	}
+	return errors.Wrap(row.Scan(&e.lastExecuteTime), "scan db time")
+}
+
+func (e *Executer) LastExecuteTime() time.Time {
+	return e.lastExecuteTime
 }
 
 type QueryScanner struct {

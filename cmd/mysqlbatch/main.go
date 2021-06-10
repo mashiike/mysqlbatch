@@ -48,4 +48,5 @@ func main() {
 		log.Println(err)
 		os.Exit(1)
 	}
+	log.Println("DB time when the last SQL was executed:", executer.LastExecuteTime())
 }
