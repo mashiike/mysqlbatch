@@ -120,8 +120,8 @@ func (e *Executer) executeContext(ctx context.Context, queryReader io.Reader) er
 				if err := e.queryContext(ctx, query); err != nil {
 					return errors.Wrap(err, "query rows failed")
 				}
+				continue
 			}
-			continue
 		}
 		result, err := e.db.ExecContext(ctx, query)
 		if err != nil {
