@@ -49,6 +49,7 @@ type Executer struct {
 	dsn             string
 	lastExecuteTime time.Time
 	selectHook      func(query string, columns []string, rows [][]string)
+	executeHook     func(query string, rowsAffected int64, lastInsertId int64)
 }
 
 func New(config *Config) *Executer {
@@ -70,8 +71,24 @@ func (e *Executer) ExecuteContext(ctx context.Context, queryReader io.Reader) er
 	defer db.Close()
 	db.SetMaxIdleConns(1)
 	db.SetMaxOpenConns(1)
+	if err := e.executeContext(ctx, db, queryReader); err != nil {
+		return err
+	}
+	row := db.QueryRowContext(ctx, "SELECT NOW()")
+	if err := row.Err(); err != nil {
+		return errors.Wrap(err, "get db time")
+	}
+	return errors.Wrap(row.Scan(&e.lastExecuteTime), "scan db time")
+}
+
+func (e *Executer) executeContext(ctx context.Context, db *sql.DB, queryReader io.Reader) error {
 	scanner := NewQueryScanner(queryReader)
 	for scanner.Scan() {
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		default:
+		}
 		query := scanner.Query()
 		if query == "" {
 			continue
@@ -82,18 +99,26 @@ func (e *Executer) ExecuteContext(ctx context.Context, queryReader io.Reader) er
 			}
 			continue
 		}
-		if _, err := db.ExecContext(ctx, query); err != nil {
+		result, err := db.ExecContext(ctx, query)
+		if err != nil {
 			return errors.Wrap(err, "execute query failed")
+		}
+		if e.executeHook != nil {
+			lastInsertId, err := result.LastInsertId()
+			if err != nil {
+				return err
+			}
+			rowsAffected, err := result.RowsAffected()
+			if err != nil {
+				return err
+			}
+			e.executeHook(query, rowsAffected, lastInsertId)
 		}
 	}
 	if err := scanner.Err(); err != nil {
 		return errors.Wrap(scanner.Err(), "query scanner err")
 	}
-	row := db.QueryRowContext(ctx, "SELECT NOW()")
-	if err := row.Err(); err != nil {
-		return errors.Wrap(err, "get db time")
-	}
-	return errors.Wrap(row.Scan(&e.lastExecuteTime), "scan db time")
+	return nil
 }
 
 func (e *Executer) executeSelect(ctx context.Context, db *sql.DB, query string) error {
@@ -124,6 +149,10 @@ func (e *Executer) executeSelect(ctx context.Context, db *sql.DB, query string) 
 
 func (e *Executer) LastExecuteTime() time.Time {
 	return e.lastExecuteTime
+}
+
+func (e *Executer) SetExecuteHook(hook func(query string, rowsAffected, lastInsertId int64)) {
+	e.executeHook = hook
 }
 
 func (e *Executer) SetSelectHook(hook func(query string, columns []string, rows [][]string)) {

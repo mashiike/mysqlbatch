@@ -23,6 +23,7 @@ func main() {
 	var (
 		versionFlag = flag.Bool("v", false, "show version info")
 		silentFlag  = flag.Bool("s", false, "no output to console")
+		detailFlag  = flag.Bool("d", false, "output deteil for execute sql, -s has priority")
 	)
 	flag.StringVar(&conf.DSN, "dsn", "", "dsn format as [mysql://]user:pass@tcp(host:port)/dbname (default \"\")")
 	flag.StringVar(&conf.User, "u", "root", "username (default root)")
@@ -49,6 +50,11 @@ func main() {
 		executer.SetTableSelectHook(func(query, table string) {
 			log.Println(query + "\n" + table + "\n")
 		})
+		if *detailFlag {
+			executer.SetExecuteHook(func(query string, rowsAffected, lastInsertId int64) {
+				log.Printf("%s\nQuery OK, %d rows affected, last inserted id = %d\n", query, rowsAffected, lastInsertId)
+			})
+		}
 	}
 	if err := executer.ExecuteContext(ctx, os.Stdin); err != nil {
 		log.Println(err)
