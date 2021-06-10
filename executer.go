@@ -10,6 +10,7 @@ import (
 	"time"
 
 	_ "github.com/go-sql-driver/mysql"
+	"github.com/olekukonko/tablewriter"
 	"github.com/pkg/errors"
 )
 
@@ -47,6 +48,7 @@ func (c *Config) GetDSN() string {
 type Executer struct {
 	dsn             string
 	lastExecuteTime time.Time
+	selectHook      func(query string, columns []string, rows [][]string)
 }
 
 func New(config *Config) *Executer {
@@ -74,6 +76,12 @@ func (e *Executer) ExecuteContext(ctx context.Context, queryReader io.Reader) er
 		if query == "" {
 			continue
 		}
+		if strings.HasPrefix(strings.ToUpper(query), "SELECT") && e.selectHook != nil {
+			if err := e.executeSelect(ctx, db, query); err != nil {
+				return errors.Wrap(err, "query rows failed")
+			}
+			continue
+		}
 		if _, err := db.ExecContext(ctx, query); err != nil {
 			return errors.Wrap(err, "execute query failed")
 		}
@@ -88,8 +96,49 @@ func (e *Executer) ExecuteContext(ctx context.Context, queryReader io.Reader) er
 	return errors.Wrap(row.Scan(&e.lastExecuteTime), "scan db time")
 }
 
+func (e *Executer) executeSelect(ctx context.Context, db *sql.DB, query string) error {
+	iter, err := db.QueryContext(ctx, query)
+	if err != nil {
+		return err
+	}
+	defer iter.Close()
+	columns, err := iter.Columns()
+	if err != nil {
+		return err
+	}
+	rows := make([][]string, 0)
+	iRow := make([]interface{}, len(columns))
+	for iter.Next() {
+		row := make([]string, len(columns))
+		for i := range row {
+			iRow[i] = &row[i]
+		}
+		if err := iter.Scan(iRow...); err != nil {
+			return err
+		}
+		rows = append(rows, row)
+	}
+	e.selectHook(query, columns, rows)
+	return nil
+}
+
 func (e *Executer) LastExecuteTime() time.Time {
 	return e.lastExecuteTime
+}
+
+func (e *Executer) SetSelectHook(hook func(query string, columns []string, rows [][]string)) {
+	e.selectHook = hook
+}
+
+func (e *Executer) SetTableSelectHook(hook func(query, table string)) {
+	e.selectHook = func(query string, columns []string, rows [][]string) {
+		var buf strings.Builder
+		tw := tablewriter.NewWriter(&buf)
+		tw.SetHeader(columns)
+		tw.AppendBulk(rows)
+		tw.Render()
+		hook(query, buf.String())
+	}
 }
 
 type QueryScanner struct {

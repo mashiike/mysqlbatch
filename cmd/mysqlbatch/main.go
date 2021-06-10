@@ -22,6 +22,7 @@ func main() {
 	conf := mysqlbatch.NewDefaultConfig()
 	var (
 		versionFlag = flag.Bool("v", false, "show version info")
+		silentFlag  = flag.Bool("s", false, "no output to console")
 	)
 	flag.StringVar(&conf.DSN, "dsn", "", "dsn format as [mysql://]user:pass@tcp(host:port)/dbname (default \"\")")
 	flag.StringVar(&conf.User, "u", "root", "username (default root)")
@@ -44,9 +45,16 @@ func main() {
 	defer stop()
 
 	executer := mysqlbatch.New(conf)
+	if !*silentFlag {
+		executer.SetTableSelectHook(func(query, table string) {
+			log.Println(query + "\n" + table + "\n")
+		})
+	}
 	if err := executer.ExecuteContext(ctx, os.Stdin); err != nil {
 		log.Println(err)
 		os.Exit(1)
 	}
-	log.Println("DB time when the last SQL was executed:", executer.LastExecuteTime())
+	if !*silentFlag {
+		log.Println("DB time when the last SQL was executed:", executer.LastExecuteTime())
+	}
 }
