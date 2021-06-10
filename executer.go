@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"strings"
+	"sync"
 	"time"
 
 	_ "github.com/go-sql-driver/mysql"
@@ -46,16 +47,38 @@ func (c *Config) GetDSN() string {
 }
 
 type Executer struct {
+	mu              sync.Mutex
 	dsn             string
+	db              *sql.DB
 	lastExecuteTime time.Time
 	selectHook      func(query string, columns []string, rows [][]string)
 	executeHook     func(query string, rowsAffected int64, lastInsertId int64)
 }
 
-func New(config *Config) *Executer {
-	return &Executer{
-		dsn: config.GetDSN(),
+func New(config *Config) (*Executer, error) {
+	return Open(config.GetDSN())
+}
+
+func Open(dsn string) (*Executer, error) {
+	db, err := sql.Open("mysql", dsn)
+	if err != nil {
+		return nil, errors.Wrap(err, "mysql connect failed")
 	}
+	db.SetMaxIdleConns(1)
+	db.SetMaxOpenConns(1)
+	return &Executer{
+		dsn: dsn,
+		db:  db,
+	}, nil
+}
+
+func (e *Executer) Close() error {
+	e.mu.Lock()
+	defer e.mu.Unlock()
+	if e.db == nil {
+		return nil
+	}
+	return e.db.Close()
 }
 
 func (e *Executer) Execute(queryReader io.Reader) error {
@@ -63,25 +86,23 @@ func (e *Executer) Execute(queryReader io.Reader) error {
 }
 
 func (e *Executer) ExecuteContext(ctx context.Context, queryReader io.Reader) error {
-
-	db, err := sql.Open("mysql", e.dsn)
-	if err != nil {
-		return errors.Wrap(err, "mysql connect failed")
-	}
-	defer db.Close()
-	db.SetMaxIdleConns(1)
-	db.SetMaxOpenConns(1)
-	if err := e.executeContext(ctx, db, queryReader); err != nil {
+	e.mu.Lock()
+	defer e.mu.Unlock()
+	if err := e.executeContext(ctx, queryReader); err != nil {
 		return err
 	}
-	row := db.QueryRowContext(ctx, "SELECT NOW()")
+	return e.updateLastExecuteTime(ctx)
+}
+
+func (e *Executer) updateLastExecuteTime(ctx context.Context) error {
+	row := e.db.QueryRowContext(ctx, "SELECT NOW()")
 	if err := row.Err(); err != nil {
 		return errors.Wrap(err, "get db time")
 	}
 	return errors.Wrap(row.Scan(&e.lastExecuteTime), "scan db time")
 }
 
-func (e *Executer) executeContext(ctx context.Context, db *sql.DB, queryReader io.Reader) error {
+func (e *Executer) executeContext(ctx context.Context, queryReader io.Reader) error {
 	scanner := NewQueryScanner(queryReader)
 	for scanner.Scan() {
 		select {
@@ -94,12 +115,12 @@ func (e *Executer) executeContext(ctx context.Context, db *sql.DB, queryReader i
 			continue
 		}
 		if strings.HasPrefix(strings.ToUpper(query), "SELECT") && e.selectHook != nil {
-			if err := e.executeSelect(ctx, db, query); err != nil {
+			if err := e.queryContext(ctx, query); err != nil {
 				return errors.Wrap(err, "query rows failed")
 			}
 			continue
 		}
-		result, err := db.ExecContext(ctx, query)
+		result, err := e.db.ExecContext(ctx, query)
 		if err != nil {
 			return errors.Wrap(err, "execute query failed")
 		}
@@ -121,8 +142,8 @@ func (e *Executer) executeContext(ctx context.Context, db *sql.DB, queryReader i
 	return nil
 }
 
-func (e *Executer) executeSelect(ctx context.Context, db *sql.DB, query string) error {
-	iter, err := db.QueryContext(ctx, query)
+func (e *Executer) queryContext(ctx context.Context, query string) error {
+	iter, err := e.db.QueryContext(ctx, query)
 	if err != nil {
 		return err
 	}

@@ -45,7 +45,12 @@ func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGTERM|syscall.SIGHUP|syscall.SIGINT)
 	defer stop()
 
-	executer := mysqlbatch.New(conf)
+	executer, err := mysqlbatch.New(conf)
+	if err != nil {
+		log.Println(err)
+		os.Exit(2)
+	}
+	defer executer.Close()
 	if !*silentFlag {
 		executer.SetTableSelectHook(func(query, table string) {
 			log.Println(query + "\n" + table + "\n")
