@@ -14,8 +14,8 @@ import (
 )
 
 var (
-	version = "current"
-	date    = "unknown"
+	Version   = "current"
+	BuildDate = "(no data)"
 )
 
 func main() {
@@ -33,9 +33,9 @@ func main() {
 	flag.Parse()
 
 	if *versionFlag {
-		fmt.Printf("version   : %s\n", version)
+		fmt.Printf("version   : %s\n", Version)
 		fmt.Printf("go version: %s\n", runtime.Version())
-		fmt.Printf("build date: %s\n", date)
+		fmt.Printf("build date: %s\n", BuildDate)
 		return
 	}
 

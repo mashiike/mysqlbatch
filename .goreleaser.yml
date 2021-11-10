@@ -10,6 +10,8 @@ builds:
     binary: mysqlbatch
     ldflags:
       - -s -w
+      - -X main.Version=v{{.Version}}
+      - -X main.BuildDate=v{{.Date}}
     goos:
       - darwin
       - linux
