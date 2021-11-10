@@ -53,6 +53,7 @@ type Executer struct {
 	lastExecuteTime time.Time
 	selectHook      func(query string, columns []string, rows [][]string)
 	executeHook     func(query string, rowsAffected int64, lastInsertId int64)
+	isSelectFunc    func(query string) bool
 }
 
 func New(config *Config) (*Executer, error) {
@@ -123,7 +124,15 @@ func (e *Executer) executeContext(ctx context.Context, queryReader io.Reader) er
 		}
 		if e.selectHook != nil {
 			upperedQuery := strings.ToUpper(query)
-			if strings.HasPrefix(upperedQuery, "SELECT") || strings.HasPrefix(upperedQuery, "SHOW") || strings.HasPrefix(upperedQuery, `\`) {
+			var isSelect bool
+			if e.isSelectFunc == nil {
+				if strings.HasPrefix(upperedQuery, "SELECT") || strings.HasPrefix(upperedQuery, "SHOW") || strings.HasPrefix(upperedQuery, `\`) {
+					isSelect = true
+				}
+			} else {
+				isSelect = e.isSelectFunc(upperedQuery)
+			}
+			if isSelect {
 				if err := e.queryContext(ctx, query); err != nil {
 					return errors.Wrap(err, "query rows failed")
 				}
@@ -192,6 +201,10 @@ func (e *Executer) SetExecuteHook(hook func(query string, rowsAffected, lastInse
 
 func (e *Executer) SetSelectHook(hook func(query string, columns []string, rows [][]string)) {
 	e.selectHook = hook
+}
+
+func (e *Executer) SetIsSelectFunc(f func(query string) bool) {
+	e.isSelectFunc = f
 }
 
 func (e *Executer) SetTableSelectHook(hook func(query, table string)) {
