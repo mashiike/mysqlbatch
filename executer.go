@@ -6,7 +6,6 @@ import (
 	"database/sql"
 	"fmt"
 	"io"
-	"net/url"
 	"strings"
 	"sync"
 	"time"
@@ -62,13 +61,9 @@ func New(config *Config) (*Executer, error) {
 }
 
 func Open(dsn string) (*Executer, error) {
-	u, err := url.Parse(dsn)
+	db, err := sql.Open("mysql", dsn)
 	if err != nil {
-		return nil, err
-	}
-	db, err := sql.Open(u.Scheme, dsn)
-	if err != nil {
-		return nil, errors.Wrap(err, "db connect failed")
+		return nil, errors.Wrap(err, "mysql connect failed")
 	}
 	return NewWithDB(db), nil
 }
