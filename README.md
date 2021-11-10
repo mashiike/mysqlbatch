@@ -35,3 +35,23 @@ $ mysqlbatch -u root -p ${password} -h localhost < batch.sql
 ```
 
 
+## Usage as a library
+
+
+```go
+executer, err := mysqlbatch.Open("root:password@tcp(localhost:3306)/testdb?parseTime=true")
+if err != nil {
+    //...
+}
+defer executer.Close()
+if err := executer.Execute(strings.NewReader("UPDATE users SET name = 'hoge';")); err != nil {
+    //...
+}
+```
+
+more infomation see [go doc](https://godoc.org/github.com/mashiike/mysqlbatch).
+
+## License
+
+see [LICENSE](https://github.com/mashiike/mysqlbatch/blob/master/LICENSE) file.
+

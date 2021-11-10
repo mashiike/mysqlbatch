@@ -7,6 +7,7 @@ import (
 	"log"
 	"os"
 	"os/signal"
+	"runtime"
 	"syscall"
 
 	"github.com/mashiike/mysqlbatch"
@@ -15,7 +16,6 @@ import (
 var (
 	Version   = "current"
 	BuildDate = "(no data)"
-	GoVersion = "(no data)"
 )
 
 func main() {
@@ -34,7 +34,7 @@ func main() {
 
 	if *versionFlag {
 		fmt.Printf("version   : %s\n", Version)
-		fmt.Printf("go version: %s\n", GoVersion)
+		fmt.Printf("go version: %s\n", runtime.Version())
 		fmt.Printf("build date: %s\n", BuildDate)
 		return
 	}
