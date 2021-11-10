@@ -68,11 +68,15 @@ func Open(dsn string) (*Executer, error) {
 	if err != nil {
 		return nil, errors.Wrap(err, "db connect failed")
 	}
+	return NewWithDB(db), nil
+}
+
+func NewWithDB(db *sql.DB) *Executer {
 	db.SetMaxIdleConns(1)
 	db.SetMaxOpenConns(1)
 	return &Executer{
 		db: db,
-	}, nil
+	}
 }
 
 func (e *Executer) Close() error {
