@@ -48,7 +48,6 @@ func (c *Config) GetDSN() string {
 
 type Executer struct {
 	mu              sync.Mutex
-	dsn             string
 	db              *sql.DB
 	lastExecuteTime time.Time
 	selectHook      func(query string, columns []string, rows [][]string)
@@ -67,8 +66,7 @@ func Open(dsn string) (*Executer, error) {
 	db.SetMaxIdleConns(1)
 	db.SetMaxOpenConns(1)
 	return &Executer{
-		dsn: dsn,
-		db:  db,
+		db: db,
 	}, nil
 }
 
