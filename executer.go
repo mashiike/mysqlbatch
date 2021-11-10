@@ -123,7 +123,7 @@ func (e *Executer) executeContext(ctx context.Context, queryReader io.Reader) er
 		}
 		if e.selectHook != nil {
 			upperedQuery := strings.ToUpper(query)
-			if strings.HasPrefix(upperedQuery, "SELECT") || strings.HasPrefix(upperedQuery, "SHOW") {
+			if strings.HasPrefix(upperedQuery, "SELECT") || strings.HasPrefix(upperedQuery, "SHOW") || strings.HasPrefix(upperedQuery, `\`) {
 				if err := e.queryContext(ctx, query); err != nil {
 					return errors.Wrap(err, "query rows failed")
 				}
