@@ -54,6 +54,7 @@ type Executer struct {
 	selectHook      func(query string, columns []string, rows [][]string)
 	executeHook     func(query string, rowsAffected int64, lastInsertId int64)
 	isSelectFunc    func(query string) bool
+	timeCheckQuery  string
 }
 
 func New(config *Config) (*Executer, error) {
@@ -76,7 +77,8 @@ func NewWithDB(db *sql.DB) *Executer {
 	db.SetMaxIdleConns(1)
 	db.SetMaxOpenConns(1)
 	return &Executer{
-		db: db,
+		db:             db,
+		timeCheckQuery: "SELECT NOW()",
 	}
 }
 
@@ -103,7 +105,7 @@ func (e *Executer) ExecuteContext(ctx context.Context, queryReader io.Reader) er
 }
 
 func (e *Executer) updateLastExecuteTime(ctx context.Context) error {
-	row := e.db.QueryRowContext(ctx, "SELECT NOW()")
+	row := e.db.QueryRowContext(ctx, e.timeCheckQuery)
 	if err := row.Err(); err != nil {
 		return errors.Wrap(err, "get db time")
 	}
@@ -205,6 +207,10 @@ func (e *Executer) SetSelectHook(hook func(query string, columns []string, rows 
 
 func (e *Executer) SetIsSelectFunc(f func(query string) bool) {
 	e.isSelectFunc = f
+}
+
+func (e *Executer) SetTimeCheckQuery(query string) {
+	e.timeCheckQuery = query
 }
 
 func (e *Executer) SetTableSelectHook(hook func(query, table string)) {
