@@ -1,0 +1,23 @@
+# docker-compose.yml for local development
+
+version: "3.9"
+
+services:
+  test_db:
+    image: mysql:5.7
+    environment:
+      - MYSQL_DATABASE=mysqlbatch
+      - MYSQL_USER=mysqlbatch
+      - MYSQL_PASSWORD=mysqlbatch
+      - MYSQL_ROOT_PASSWORD=mysqlbatch
+      - TZ=Asia/Tokyo
+    ports:
+      - 3306:3306
+    tmpfs:
+      - /var/lib/mysql
+    networks:
+      - net
+
+networks:
+  net:
+    driver: bridge
