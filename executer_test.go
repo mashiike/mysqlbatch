@@ -1,12 +1,17 @@
 package mysqlbatch_test
 
 import (
+	"bytes"
+	_ "embed"
 	"fmt"
 	"strings"
+	"sync/atomic"
 	"testing"
+	"time"
 
 	"github.com/mashiike/mysqlbatch"
 	"github.com/sergi/go-diff/diffmatchpatch"
+	"github.com/stretchr/testify/require"
 )
 
 func TestQueryScanner(t *testing.T) {
@@ -82,4 +87,30 @@ func diffStr(a, b string) (string, bool) {
 		}
 	}
 	return dmp.DiffPrettyText(diffs), same
+}
+
+//go:embed testdata/test.sql
+var testSQL []byte
+
+func TestExecuterExecute(t *testing.T) {
+	conf := mysqlbatch.NewDefaultConfig()
+	conf.Password = "mysqlbatch"
+	e, err := mysqlbatch.New(conf)
+	require.NoError(t, err)
+	defer e.Close()
+
+	e.SetTimeCheckQuery("SELECT NOW()")
+	e.SetTableSelectHook(func(query, table string) {
+		t.Log(query + "\n" + table + "\n")
+	})
+	var count int32
+	e.SetSelectHook(func(query string, columns []string, rows [][]string) {
+		atomic.AddInt32(&count, 1)
+		require.Equal(t, `SELECT * FROM users WHERE age is NOT NULL LIMIT 5`, query)
+		require.Equal(t, 5, len(rows))
+	})
+	err = e.Execute(bytes.NewReader(testSQL))
+	require.NoError(t, err)
+	require.True(t, time.Since(e.LastExecuteTime()) < time.Hour)
+	require.EqualValues(t, 1, count)
 }
