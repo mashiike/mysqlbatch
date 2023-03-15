@@ -40,7 +40,7 @@ func main() {
 		fmt.Printf("build date: %s\n", BuildDate)
 		return
 	}
-
+	conf.Database = os.Getenv("MYSQLBATCH_DATABASE")
 	if flag.NArg() == 1 {
 		conf.Database = flag.Arg(0)
 	}
