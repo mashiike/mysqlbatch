@@ -5,21 +5,37 @@ jobs:
     strategy:
       matrix:
         go:
-          - 1.17
+          - "1.20"
+        mysql:
+          - "mysql:5.7"
     name: Build
     runs-on: ubuntu-latest
+    env:
+      TZ: Asia/Tokyo
+    services:
+      db:
+        image: ${{ matrix.mysql }}
+        ports:
+          - 3306:3306
+        env:
+          MYSQL_ROOT_PASSWORD: mysqlbatch
+          MYSQL_DATABASE: mysqlbatch
+          MYSQL_USER: mysqlbatch
+          MYSQL_PASSWORD: mysqlbatch
+          TZ: Asia/Tokyo
+        options: >-
+          --health-cmd "mysqladmin ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     steps:
 
     - name: Set up Go
-      uses: actions/setup-go@v2
+      uses: actions/setup-go@v3
       with:
         go-version: ${{ matrix.go }}
       id: go
 
     - name: Check out code into the Go module directory
-      uses: actions/checkout@v2
-
-    - name: Build & Test
-      run: |
-        make clean
-        make test
+      uses: actions/checkout@v3
+      run: go test -race ./...
