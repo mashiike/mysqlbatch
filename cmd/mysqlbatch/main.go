@@ -10,6 +10,7 @@ import (
 	"runtime"
 	"syscall"
 
+	"github.com/ken39arg/go-flagx"
 	"github.com/mashiike/mysqlbatch"
 )
 
@@ -30,6 +31,7 @@ func main() {
 	flag.IntVar(&conf.Port, "P", 3306, "mysql port (default 3306)")
 	flag.StringVar(&conf.Password, "p", "", "password")
 	flag.StringVar(&conf.Host, "h", "127.0.0.1", "host (default 127.0.0.1)")
+	flag.VisitAll(flagx.EnvToFlagWithPrefix("MYSQLBATCH_"))
 	flag.Parse()
 
 	if *versionFlag {
