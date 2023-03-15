@@ -100,9 +100,9 @@ type payload struct {
 }
 
 type response struct {
-	QueryResults         []queryResults
-	LastExecuteTime      time.Time `json:"last_execute_time,omitempty"`
-	LastExecuteUnixMilli int64     `json:"last_execute_unix_milli,omitempty"`
+	QueryResults         []queryResults `json:"query_results,omitempty"`
+	LastExecuteTime      time.Time      `json:"last_execute_time,omitempty"`
+	LastExecuteUnixMilli int64          `json:"last_execute_unix_milli,omitempty"`
 }
 
 type queryResults struct {
