@@ -20,6 +20,7 @@ func TestSSMParameterFetcher(t *testing.T) {
 	remotePassword := "test password"
 	fetcher := &mysqlbatch.SSMParameterFetcher{
 		LoadAWSDefaultConfigOptions: []func(*config.LoadOptions) error{
+			config.WithRegion("ap-northeast-1"),
 			config.WithAPIOptions([]func(stack *middleware.Stack) error{
 				func(stack *middleware.Stack) error {
 					return stack.Finalize.Add(
