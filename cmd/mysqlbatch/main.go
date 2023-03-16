@@ -95,12 +95,13 @@ type handler struct {
 }
 
 type payload struct {
-	SQL  string `json:"sql,omitempty"`
-	File string `json:"file,omitempty"`
-	DSN  *string
-	User *string
-	Port *int
-	Host *string
+	SQL      string  `json:"sql,omitempty"`
+	File     string  `json:"file,omitempty"`
+	DSN      *string `json:"dsn,omitempty"`
+	User     *string `json:"user,omitempty"`
+	Port     *int    `json:"port,omitempty"`
+	Host     *string `json:"host,omitempty"`
+	Database *string `json:"database,omitempty"`
 }
 
 type response struct {
@@ -128,6 +129,9 @@ func (h *handler) Invoke(ctx context.Context, p *payload) (*response, error) {
 	}
 	if p.Host != nil {
 		conf.Host = *p.Host
+	}
+	if p.Database != nil {
+		conf.Database = *p.Database
 	}
 	executer, err := mysqlbatch.New(&conf)
 	if err != nil {
