@@ -3,6 +3,7 @@ package mysqlbatch
 import (
 	"context"
 	"fmt"
+	"log"
 	"strings"
 	"sync"
 	"time"
@@ -96,6 +97,9 @@ func (f *SSMParameterFetcher) fetchFromRemote(ctx context.Context, parameterName
 			}
 			f.ssmClient = ssm.NewFromConfig(awsConf)
 		}
+		ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+		defer cancel()
+		log.Printf("get ssm parameter `%s`", parameterName)
 		output, err := f.ssmClient.GetParameter(ctx, &ssm.GetParameterInput{
 			Name:           aws.String(parameterName),
 			WithDecryption: aws.Bool(true),
@@ -144,6 +148,7 @@ func (f *SSMParameterFetcher) setToCache(parameterName string, password string) 
 		f.cachedValue = make(map[string]string)
 	}
 	f.cachedValue[parameterName] = password
+	log.Printf("cached ssm parameter `%s`,expire is %s", parameterName, f.fetchedAt[parameterName].Add(cacheTTL).Format(time.RFC3339))
 	for key, t := range f.fetchedAt {
 		if flextime.Since(t) >= cacheTTL {
 			delete(f.fetchedAt, key)
