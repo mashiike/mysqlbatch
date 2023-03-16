@@ -41,6 +41,7 @@ func main() {
 	flag.StringVar(&conf.Password, "password", "", "")
 	flag.StringVar(&conf.Host, "h", "127.0.0.1", "host (default 127.0.0.1)")
 	flag.StringVar(&conf.Host, "host", "", "")
+	flag.StringVar(&conf.PasswordSSMParameterName, "password-ssm-parameter-name", "", "pasword ssm parameter name")
 	flag.VisitAll(flagx.EnvToFlagWithPrefix("MYSQLBATCH_"))
 	flag.Parse()
 
