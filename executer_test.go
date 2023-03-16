@@ -2,6 +2,7 @@ package mysqlbatch_test
 
 import (
 	"bytes"
+	"context"
 	_ "embed"
 	"fmt"
 	"strings"
@@ -95,7 +96,7 @@ var testSQL []byte
 func TestExecuterExecute(t *testing.T) {
 	conf := mysqlbatch.NewDefaultConfig()
 	conf.Password = "mysqlbatch"
-	e, err := mysqlbatch.New(conf)
+	e, err := mysqlbatch.New(context.Background(), conf)
 	require.NoError(t, err)
 	defer e.Close()
 
