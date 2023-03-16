@@ -65,7 +65,7 @@ func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGTERM|syscall.SIGHUP|syscall.SIGINT)
 	defer stop()
 
-	executer, err := mysqlbatch.New(conf)
+	executer, err := mysqlbatch.New(ctx, conf)
 	if err != nil {
 		log.Println(err)
 		os.Exit(2)
@@ -133,7 +133,7 @@ func (h *handler) Invoke(ctx context.Context, p *payload) (*response, error) {
 	if p.Database != nil {
 		conf.Database = *p.Database
 	}
-	executer, err := mysqlbatch.New(&conf)
+	executer, err := mysqlbatch.New(ctx, &conf)
 	if err != nil {
 		return nil, err
 	}

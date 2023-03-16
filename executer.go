@@ -26,8 +26,12 @@ type Executer struct {
 }
 
 // New return Executer with config
-func New(config *Config) (*Executer, error) {
-	return Open(config.GetDSN())
+func New(ctx context.Context, conf *Config) (*Executer, error) {
+	dsn, err := conf.GetDSN(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return Open(dsn)
 }
 
 // Open with dsn
