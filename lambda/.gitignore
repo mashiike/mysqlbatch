@@ -1,0 +1,6 @@
+bootstrap
+config.tf
+.terraform*
+*_dummy.zip
+output.json
+tmp/
