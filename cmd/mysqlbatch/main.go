@@ -97,6 +97,10 @@ type handler struct {
 type payload struct {
 	SQL  string `json:"sql,omitempty"`
 	File string `json:"file,omitempty"`
+	DSN  *string
+	User *string
+	Port *int
+	Host *string
 }
 
 type response struct {
@@ -112,7 +116,20 @@ type queryResults struct {
 }
 
 func (h *handler) Invoke(ctx context.Context, p *payload) (*response, error) {
-	executer, err := mysqlbatch.New(h.conf)
+	conf := *h.conf
+	if p.DSN != nil {
+		conf.DSN = *p.DSN
+	}
+	if p.User != nil {
+		conf.User = *p.User
+	}
+	if p.Port != nil {
+		conf.Port = *p.Port
+	}
+	if p.Host != nil {
+		conf.Host = *p.Host
+	}
+	executer, err := mysqlbatch.New(&conf)
 	if err != nil {
 		return nil, err
 	}
