@@ -55,7 +55,7 @@ func main() {
 	if flag.NArg() == 1 {
 		conf.Database = flag.Arg(0)
 	}
-	if *enableBootstrapFlag && strings.HasPrefix(os.Getenv("AWS_EXECUTION_ENV"), "AWS_Lambda") || os.Getenv("AWS_LAMBDA_RUNTIME_API") != "" {
+	if *enableBootstrapFlag && (strings.HasPrefix(os.Getenv("AWS_EXECUTION_ENV"), "AWS_Lambda") || os.Getenv("AWS_LAMBDA_RUNTIME_API") != "") {
 		h := handler{
 			conf: conf,
 		}

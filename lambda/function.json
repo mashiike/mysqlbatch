@@ -3,6 +3,7 @@
   "Architectures": ["arm64"],
   "Environment": {
       "Variables": {
+          "MYSQLBATCH_ENABLE_LAMBDA_BOOTSTRAP": "true",
           "MYSQLBATCH_HOST": "{{ tfstate `data.aws_rds_cluster.mysql.endpoint` }}",
           "MYSQLBATCH_USER": "{{ tfstate `data.aws_rds_cluster.mysql.master_username` }}",
           "MYSQLBATCH_PASSWORD_SSM_PARAMETER_NAME": "/mysqlbatch/DBPASSWORD",
