@@ -6,7 +6,7 @@ require (
 	github.com/Songmu/flextime v0.1.0
 	github.com/aws/aws-lambda-go v1.38.0
 	github.com/aws/aws-sdk-go-v2 v1.17.6
-	github.com/aws/aws-sdk-go-v2/config v1.18.17
+	github.com/aws/aws-sdk-go-v2/config v1.18.18
 	github.com/aws/aws-sdk-go-v2/service/ssm v1.35.6
 	github.com/aws/smithy-go v1.13.5
 	github.com/go-sql-driver/mysql v1.7.0
