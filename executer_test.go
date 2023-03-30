@@ -97,7 +97,7 @@ var testSQL []byte
 func TestExecuterExecute(t *testing.T) {
 	conf := mysqlbatch.NewDefaultConfig()
 	conf.Password = "mysqlbatch"
-	conf.Locale = "Asia/Tokyo"
+	conf.Location = "Asia/Tokyo"
 	e, err := mysqlbatch.New(context.Background(), conf)
 	require.NoError(t, err)
 	defer e.Close()

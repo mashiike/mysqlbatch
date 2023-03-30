@@ -26,7 +26,7 @@ type Config struct {
 	Host     string
 	Port     int
 	Database string
-	Locale   string
+	Location string
 
 	PasswordSSMParameterName string
 	Fetcher                  *SSMParameterFetcher
@@ -66,8 +66,8 @@ func (c *Config) GetDSN(ctx context.Context) (string, error) {
 	}
 	params := make(url.Values)
 	params.Set("parseTime", "true")
-	if c.Locale != "" {
-		params.Set("loc", c.Locale)
+	if c.Location != "" {
+		params.Set("loc", c.Location)
 	}
 	return fmt.Sprintf(
 		"%s:%s@tcp(%s:%d)/%s?%s",

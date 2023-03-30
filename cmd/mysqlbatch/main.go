@@ -41,6 +41,7 @@ func main() {
 	flag.StringVar(&conf.Password, "password", "", "")
 	flag.StringVar(&conf.Host, "h", "127.0.0.1", "host (default 127.0.0.1)")
 	flag.StringVar(&conf.Host, "host", "", "")
+	flag.StringVar(&conf.Location, "location", "", "timezone of mysql database system")
 	flag.StringVar(&conf.PasswordSSMParameterName, "password-ssm-parameter-name", "", "pasword ssm parameter name")
 	flag.VisitAll(flagx.EnvToFlagWithPrefix("MYSQLBATCH_"))
 	flag.Parse()
@@ -103,6 +104,7 @@ type payload struct {
 	Port                     *int    `json:"port,omitempty"`
 	Host                     *string `json:"host,omitempty"`
 	Database                 *string `json:"database,omitempty"`
+	Location                 *string `json:"Location,omitempty"`
 	PasswordSSMParameterName *string `json:"password_ssm_parameter_name,omitempty"`
 }
 
@@ -137,6 +139,9 @@ func (h *handler) Invoke(ctx context.Context, p *payload) (*response, error) {
 	}
 	if p.PasswordSSMParameterName != nil {
 		conf.PasswordSSMParameterName = *p.PasswordSSMParameterName
+	}
+	if p.Location != nil {
+		conf.Location = *p.Location
 	}
 	executer, err := mysqlbatch.New(ctx, &conf)
 	if err != nil {
