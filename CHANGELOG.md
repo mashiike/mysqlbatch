@@ -1,5 +1,13 @@
 # Changelog
 
+## [v0.4.1](https://github.com/mashiike/mysqlbatch/compare/v0.4.0...v0.4.1) - 2023-03-30
+- Bump actions/setup-go from 3 to 4 by @dependabot in https://github.com/mashiike/mysqlbatch/pull/7
+- Bump github.com/aws/aws-lambda-go from 1.38.0 to 1.39.1 by @dependabot in https://github.com/mashiike/mysqlbatch/pull/13
+- Add Location option by @mashiike in https://github.com/mashiike/mysqlbatch/pull/14
+- Bump github.com/aws/aws-sdk-go-v2/service/ssm from 1.35.6 to 1.36.0 by @dependabot in https://github.com/mashiike/mysqlbatch/pull/12
+- Bump github.com/aws/aws-sdk-go-v2 from 1.17.6 to 1.17.7 by @dependabot in https://github.com/mashiike/mysqlbatch/pull/11
+- Bump github.com/aws/aws-sdk-go-v2/config from 1.18.17 to 1.18.19 by @dependabot in https://github.com/mashiike/mysqlbatch/pull/10
+
 ## [v0.4.0](https://github.com/mashiike/mysqlbatch/compare/v0.3.0...v0.4.0) - 2023-03-16
 - Feature/modernization by @mashiike in https://github.com/mashiike/mysqlbatch/pull/2
 - Bump github.com/stretchr/testify from 1.4.0 to 1.8.2 by @dependabot in https://github.com/mashiike/mysqlbatch/pull/5
