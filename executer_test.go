@@ -5,6 +5,7 @@ import (
 	"context"
 	_ "embed"
 	"fmt"
+	"log"
 	"strings"
 	"sync/atomic"
 	"testing"
@@ -96,6 +97,7 @@ var testSQL []byte
 func TestExecuterExecute(t *testing.T) {
 	conf := mysqlbatch.NewDefaultConfig()
 	conf.Password = "mysqlbatch"
+	conf.Location = "Asia/Tokyo"
 	e, err := mysqlbatch.New(context.Background(), conf)
 	require.NoError(t, err)
 	defer e.Close()
@@ -112,6 +114,7 @@ func TestExecuterExecute(t *testing.T) {
 	})
 	err = e.Execute(bytes.NewReader(testSQL))
 	require.NoError(t, err)
-	require.True(t, time.Since(e.LastExecuteTime()) < time.Hour)
+	log.Println("LastExecuteTime:", e.LastExecuteTime())
+	require.InDelta(t, time.Since(e.LastExecuteTime()), 0, float64(5*time.Minute))
 	require.EqualValues(t, 1, count)
 }
