@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"net/url"
 	"strings"
 	"sync"
 	"time"
@@ -25,6 +26,7 @@ type Config struct {
 	Host     string
 	Port     int
 	Database string
+	Locale   string
 
 	PasswordSSMParameterName string
 	Fetcher                  *SSMParameterFetcher
@@ -62,13 +64,19 @@ func (c *Config) GetDSN(ctx context.Context) (string, error) {
 			return "", err
 		}
 	}
+	params := make(url.Values)
+	params.Set("parseTime", "true")
+	if c.Locale != "" {
+		params.Set("loc", c.Locale)
+	}
 	return fmt.Sprintf(
-		"%s:%s@tcp(%s:%d)/%s?parseTime=true",
+		"%s:%s@tcp(%s:%d)/%s?%s",
 		c.User,
 		password,
 		c.Host,
 		c.Port,
 		c.Database,
+		params.Encode(),
 	), nil
 }
 
