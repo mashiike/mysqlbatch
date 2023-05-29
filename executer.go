@@ -101,42 +101,40 @@ func (e *Executer) executeContext(ctx context.Context, queryReader io.Reader, va
 		if query == "" {
 			continue
 		}
-		if vars != nil {
-			tpl, err := template.New("query").Funcs(template.FuncMap{
-				"var": func(key string, defaultValue string) string {
-					if v, ok := vars[key]; ok {
-						return v
-					}
-					return defaultValue
-				},
-				"must_var": func(key string) (string, error) {
-					if v, ok := vars[key]; ok {
-						return v, nil
-					}
-					return "", errors.Errorf("variable %s is not defined", key)
-				},
-				"env": func(key string, defaultValue string) string {
-					if v := os.Getenv(key); v != "" {
-						return v
-					}
-					return defaultValue
-				},
-				"must_env": func(key string) (string, error) {
-					if v, ok := os.LookupEnv(key); ok {
-						return v, nil
-					}
-					return "", errors.Errorf("environment variable %s is not defined", key)
-				},
-			}).Parse(query)
-			if err != nil {
-				return errors.Wrap(err, "parse query template failed")
-			}
-			var buf strings.Builder
-			if err := tpl.Execute(&buf, nil); err != nil {
-				return errors.Wrap(err, "execute query template failed")
-			}
-			query = buf.String()
+		tpl, err := template.New("query").Funcs(template.FuncMap{
+			"var": func(key string, defaultValue string) string {
+				if v, ok := vars[key]; ok {
+					return v
+				}
+				return defaultValue
+			},
+			"must_var": func(key string) (string, error) {
+				if v, ok := vars[key]; ok {
+					return v, nil
+				}
+				return "", errors.Errorf("variable %s is not defined", key)
+			},
+			"env": func(key string, defaultValue string) string {
+				if v := os.Getenv(key); v != "" {
+					return v
+				}
+				return defaultValue
+			},
+			"must_env": func(key string) (string, error) {
+				if v, ok := os.LookupEnv(key); ok {
+					return v, nil
+				}
+				return "", errors.Errorf("environment variable %s is not defined", key)
+			},
+		}).Parse(query)
+		if err != nil {
+			return errors.Wrap(err, "parse query template failed")
 		}
+		var buf strings.Builder
+		if err := tpl.Execute(&buf, nil); err != nil {
+			return errors.Wrap(err, "execute query template failed")
+		}
+		query = buf.String()
 		if e.selectHook != nil {
 			upperedQuery := strings.ToUpper(query)
 			var isSelect bool
