@@ -27,6 +27,7 @@ var (
 func main() {
 	conf := mysqlbatch.NewDefaultConfig()
 	var (
+		vars                flagx.StringSlice
 		versionFlag         = flag.Bool("v", false, "show version info")
 		silentFlag          = flag.Bool("s", false, "no output to console")
 		detailFlag          = flag.Bool("d", false, "output deteil for execute sql, -s has priority")
@@ -43,6 +44,7 @@ func main() {
 	flag.StringVar(&conf.Host, "host", "", "")
 	flag.StringVar(&conf.Location, "location", "", "timezone of mysql database system")
 	flag.StringVar(&conf.PasswordSSMParameterName, "password-ssm-parameter-name", "", "pasword ssm parameter name")
+	flag.Var(&vars, "var", "set variable (format: key=value)")
 	flag.VisitAll(flagx.EnvToFlagWithPrefix("MYSQLBATCH_"))
 	flag.Parse()
 
@@ -83,7 +85,16 @@ func main() {
 			})
 		}
 	}
-	if err := executer.ExecuteContext(ctx, os.Stdin); err != nil {
+	varsMap := make(map[string]string)
+	for _, v := range vars {
+		kv := strings.SplitN(v, "=", 2)
+		if len(kv) != 2 {
+			log.Printf("invalid var format: %s\n", v)
+			os.Exit(1)
+		}
+		varsMap[kv[0]] = kv[1]
+	}
+	if err := executer.ExecuteContext(ctx, os.Stdin, varsMap); err != nil {
 		log.Println(err)
 		os.Exit(1)
 	}
@@ -97,15 +108,16 @@ type handler struct {
 }
 
 type payload struct {
-	SQL                      string  `json:"sql,omitempty"`
-	File                     string  `json:"file,omitempty"`
-	DSN                      *string `json:"dsn,omitempty"`
-	User                     *string `json:"user,omitempty"`
-	Port                     *int    `json:"port,omitempty"`
-	Host                     *string `json:"host,omitempty"`
-	Database                 *string `json:"database,omitempty"`
-	Location                 *string `json:"Location,omitempty"`
-	PasswordSSMParameterName *string `json:"password_ssm_parameter_name,omitempty"`
+	SQL                      string            `json:"sql,omitempty"`
+	File                     string            `json:"file,omitempty"`
+	DSN                      *string           `json:"dsn,omitempty"`
+	User                     *string           `json:"user,omitempty"`
+	Port                     *int              `json:"port,omitempty"`
+	Host                     *string           `json:"host,omitempty"`
+	Database                 *string           `json:"database,omitempty"`
+	Location                 *string           `json:"Location,omitempty"`
+	PasswordSSMParameterName *string           `json:"password_ssm_parameter_name,omitempty"`
+	Vars                     map[string]string `json:"vars,omitempty"`
 }
 
 type response struct {
@@ -173,7 +185,7 @@ func (h *handler) Invoke(ctx context.Context, p *payload) (*response, error) {
 			Query:   query,
 		})
 	})
-	if err := executer.ExecuteContext(ctx, query); err != nil {
+	if err := executer.ExecuteContext(ctx, query, p.Vars); err != nil {
 		return nil, err
 	}
 	r := &response{

@@ -5,8 +5,10 @@ import (
 	"context"
 	"database/sql"
 	"io"
+	"os"
 	"strings"
 	"sync"
+	"text/template"
 	"time"
 
 	_ "github.com/go-sql-driver/mysql"
@@ -65,15 +67,15 @@ func (e *Executer) Close() error {
 }
 
 // Execute SQL
-func (e *Executer) Execute(queryReader io.Reader) error {
-	return e.ExecuteContext(context.Background(), queryReader)
+func (e *Executer) Execute(queryReader io.Reader, vars map[string]string) error {
+	return e.ExecuteContext(context.Background(), queryReader, vars)
 }
 
 // ExecuteContext SQL execute with context.Context
-func (e *Executer) ExecuteContext(ctx context.Context, queryReader io.Reader) error {
+func (e *Executer) ExecuteContext(ctx context.Context, queryReader io.Reader, vars map[string]string) error {
 	e.mu.Lock()
 	defer e.mu.Unlock()
-	if err := e.executeContext(ctx, queryReader); err != nil {
+	if err := e.executeContext(ctx, queryReader, vars); err != nil {
 		return err
 	}
 	return e.updateLastExecuteTime(ctx)
@@ -87,7 +89,7 @@ func (e *Executer) updateLastExecuteTime(ctx context.Context) error {
 	return errors.Wrap(row.Scan(&e.lastExecuteTime), "scan db time")
 }
 
-func (e *Executer) executeContext(ctx context.Context, queryReader io.Reader) error {
+func (e *Executer) executeContext(ctx context.Context, queryReader io.Reader, vars map[string]string) error {
 	scanner := NewQueryScanner(queryReader)
 	for scanner.Scan() {
 		select {
@@ -98,6 +100,42 @@ func (e *Executer) executeContext(ctx context.Context, queryReader io.Reader) er
 		query := scanner.Query()
 		if query == "" {
 			continue
+		}
+		if vars != nil {
+			tpl, err := template.New("query").Funcs(template.FuncMap{
+				"var": func(key string, defaultValue string) string {
+					if v, ok := vars[key]; ok {
+						return v
+					}
+					return defaultValue
+				},
+				"must_var": func(key string) (string, error) {
+					if v, ok := vars[key]; ok {
+						return v, nil
+					}
+					return "", errors.Errorf("variable %s is not defined", key)
+				},
+				"env": func(key string, defaultValue string) string {
+					if v := os.Getenv(key); v != "" {
+						return v
+					}
+					return defaultValue
+				},
+				"must_env": func(key string) (string, error) {
+					if v, ok := os.LookupEnv(key); ok {
+						return v, nil
+					}
+					return "", errors.Errorf("environment variable %s is not defined", key)
+				},
+			}).Parse(query)
+			if err != nil {
+				return errors.Wrap(err, "parse query template failed")
+			}
+			var buf strings.Builder
+			if err := tpl.Execute(&buf, nil); err != nil {
+				return errors.Wrap(err, "execute query template failed")
+			}
+			query = buf.String()
 		}
 		if e.selectHook != nil {
 			upperedQuery := strings.ToUpper(query)
