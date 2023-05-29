@@ -2,19 +2,23 @@ package mysqlbatch
 
 import (
 	"bufio"
+	"bytes"
 	"context"
 	"database/sql"
+	"fmt"
 	"io"
 	"os"
 	"strings"
 	"sync"
-	"text/template"
 	"time"
 
+	"github.com/flosch/pongo2/v6"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/olekukonko/tablewriter"
 	"github.com/pkg/errors"
 )
+
+var DefaultSQLDumper io.Writer = io.Discard
 
 // Executer queries the DB. There is no parallelism
 type Executer struct {
@@ -90,7 +94,20 @@ func (e *Executer) updateLastExecuteTime(ctx context.Context) error {
 }
 
 func (e *Executer) executeContext(ctx context.Context, queryReader io.Reader, vars map[string]string) error {
-	scanner := NewQueryScanner(queryReader)
+	bs, err := io.ReadAll(queryReader)
+	if err != nil {
+		return err
+	}
+	tpl, err := pongo2.FromBytes(bs)
+	if err != nil {
+		return errors.Wrap(err, "parse query template failed")
+	}
+	var buf bytes.Buffer
+	if err := tpl.ExecuteWriter(e.newPongo2Ctx(ctx, vars), &buf); err != nil {
+		return errors.Wrap(err, "execute query template failed")
+	}
+	reader := io.TeeReader(&buf, DefaultSQLDumper)
+	scanner := NewQueryScanner(reader)
 	for scanner.Scan() {
 		select {
 		case <-ctx.Done():
@@ -101,40 +118,6 @@ func (e *Executer) executeContext(ctx context.Context, queryReader io.Reader, va
 		if query == "" {
 			continue
 		}
-		tpl, err := template.New("query").Funcs(template.FuncMap{
-			"var": func(key string, defaultValue string) string {
-				if v, ok := vars[key]; ok {
-					return v
-				}
-				return defaultValue
-			},
-			"must_var": func(key string) (string, error) {
-				if v, ok := vars[key]; ok {
-					return v, nil
-				}
-				return "", errors.Errorf("variable %s is not defined", key)
-			},
-			"env": func(key string, defaultValue string) string {
-				if v := os.Getenv(key); v != "" {
-					return v
-				}
-				return defaultValue
-			},
-			"must_env": func(key string) (string, error) {
-				if v, ok := os.LookupEnv(key); ok {
-					return v, nil
-				}
-				return "", errors.Errorf("environment variable %s is not defined", key)
-			},
-		}).Parse(query)
-		if err != nil {
-			return errors.Wrap(err, "parse query template failed")
-		}
-		var buf strings.Builder
-		if err := tpl.Execute(&buf, nil); err != nil {
-			return errors.Wrap(err, "execute query template failed")
-		}
-		query = buf.String()
 		if e.selectHook != nil {
 			upperedQuery := strings.ToUpper(query)
 			var isSelect bool
@@ -239,6 +222,70 @@ func (e *Executer) SetTableSelectHook(hook func(query, table string)) {
 		tw.Render()
 		hook(query, buf.String())
 	}
+}
+
+func (e *Executer) newPongo2Ctx(ctx context.Context, vars map[string]string) pongo2.Context {
+	pongo2Ctx := pongo2.Context{
+		"var": func(key string, defaultValue string) string {
+			if v, ok := vars[key]; ok {
+				return v
+			}
+			return defaultValue
+		},
+		"must_var": func(key string) (string, error) {
+			if v, ok := vars[key]; ok {
+				return v, nil
+			}
+			return "", errors.Errorf("variable %s is not defined", key)
+		},
+		"env": func(key string, defaultValue string) string {
+			if v, ok := os.LookupEnv(key); ok {
+				return v
+			}
+			return defaultValue
+		},
+		"must_env": func(key string) (string, error) {
+			if v, ok := os.LookupEnv(key); ok {
+				return v, nil
+			}
+			return "", errors.Errorf("environment variable %s is not defined", key)
+		},
+		"range": func(args ...int) ([]int, error) {
+			if len(args) == 0 {
+				return nil, errors.New("range requires at least 1 argument, got 0")
+			}
+			if len(args) > 3 {
+				return nil, fmt.Errorf("range requires at most 3 arguments, got %d", len(args))
+			}
+			var start, end, step int
+			switch len(args) {
+			case 1:
+				start = 0
+				end = args[0]
+				step = 1
+			case 2:
+				start = args[0]
+				end = args[1]
+				step = 1
+			case 3:
+				start = args[0]
+				end = args[1]
+				step = args[2]
+			}
+			if step == 0 {
+				return nil, errors.New("range requires step != 0")
+			}
+			if (step > 0 && start > end) || (step < 0 && start < end) {
+				return nil, errors.New("range requires start <= end when step > 0, or start >= end when step < 0")
+			}
+			var result []int
+			for i := start; i < end; i += step {
+				result = append(result, i)
+			}
+			return result, nil
+		},
+	}
+	return pongo2Ctx
 }
 
 // QueryScanner separate string by ; and delete newline

@@ -125,6 +125,7 @@ func TestExecuterExecute(t *testing.T) {
 
 func TestExecuterExecute__WithVars(t *testing.T) {
 	os.Setenv("ENV", "test")
+	mysqlbatch.DefaultSQLDumper = os.Stderr
 	conf := mysqlbatch.NewDefaultConfig()
 	conf.Password = "mysqlbatch"
 	conf.Location = "Asia/Tokyo"

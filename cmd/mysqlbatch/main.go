@@ -32,6 +32,7 @@ func main() {
 		silentFlag          = flag.Bool("s", false, "no output to console")
 		detailFlag          = flag.Bool("d", false, "output deteil for execute sql, -s has priority")
 		enableBootstrapFlag = flag.Bool("enable-lambda-bootstrap", false, "if run on AWS Lambda, running as lambda bootstrap")
+		dumpRenderedSQLFlag = flag.Bool("dump-rendered-sql", false, "dump rendered sql")
 	)
 	flag.StringVar(&conf.DSN, "dsn", "", "dsn format as [mysql://]user:pass@tcp(host:port)/dbname (default \"\")")
 	flag.StringVar(&conf.User, "u", "root", "username (default root)")
@@ -53,6 +54,9 @@ func main() {
 		fmt.Printf("go version: %s\n", runtime.Version())
 		fmt.Printf("build date: %s\n", BuildDate)
 		return
+	}
+	if *dumpRenderedSQLFlag {
+		mysqlbatch.DefaultSQLDumper = os.Stderr
 	}
 	conf.Database = os.Getenv("MYSQLBATCH_DATABASE")
 	if flag.NArg() == 1 {
