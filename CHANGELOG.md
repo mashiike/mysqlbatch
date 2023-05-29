@@ -1,5 +1,12 @@
 # Changelog
 
+## [v0.6.0](https://github.com/mashiike/mysqlbatch/compare/v0.5.0...v0.6.0) - 2023-05-29
+- Bump github.com/aws/aws-sdk-go-v2/config from 1.18.19 to 1.18.25 by @dependabot in https://github.com/mashiike/mysqlbatch/pull/27
+- Bump github.com/aws/aws-lambda-go from 1.39.1 to 1.41.0 by @dependabot in https://github.com/mashiike/mysqlbatch/pull/26
+- Bump github.com/go-sql-driver/mysql from 1.7.0 to 1.7.1 by @dependabot in https://github.com/mashiike/mysqlbatch/pull/23
+- Bump github.com/aws/aws-sdk-go-v2/service/ssm from 1.36.0 to 1.36.4 by @dependabot in https://github.com/mashiike/mysqlbatch/pull/25
+- allow Django like template SQL by @mashiike in https://github.com/mashiike/mysqlbatch/pull/29
+
 ## [v0.5.0](https://github.com/mashiike/mysqlbatch/compare/v0.4.0...v0.5.0) - 2023-03-30
 - Bump actions/setup-go from 3 to 4 by @dependabot in https://github.com/mashiike/mysqlbatch/pull/7
 - Bump github.com/aws/aws-lambda-go from 1.38.0 to 1.39.1 by @dependabot in https://github.com/mashiike/mysqlbatch/pull/13
