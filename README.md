@@ -132,6 +132,66 @@ output
 }
 ```
 
+## Advanced Usage: Template SQL
+
+The SQL to be executed is rendered by pongo2, a Django-syntax like template-engine, once.
+Therefore, the SQL to be specified can use template notation.
+In CLI, `--var key=value` flag, in Lambda, `vars` key can be specified as a string hash, and variables can be passed at runtime to dynamically generate SQL by template notation.
+For example, if you specify `--var relation=users --var limit=5` and execute the following template SQL, (environment variable `ENV=dev` is set)
+
+task_template.sql
+```sql
+CREATE DATABASE IF NOT EXISTS {{ must_env("ENV") }}_mysqlbatch;
+USE {{ must_env("ENV") }}_mysqlbatch;
+DROP TABLE IF EXISTS {{ var("relation","hoge") }};
+CREATE TABLE {{ var("relation","hoge") }} (
+    id INTEGER auto_increment,
+    name VARCHAR(191),
+    age INTEGER,
+    PRIMARY KEY (`id`),
+    UNIQUE INDEX `name` (`name`)
+);
+INSERT IGNORE INTO {{ var("relation","hoge") }}(name) VALUES(CONCAT(SUBSTRING(MD5(RAND()), 1, 40),'@example.com'));
+INSERT IGNORE INTO {{ var("relation","hoge") }}(name) SELECT (CONCAT(SUBSTRING(MD5(RAND()), 1, 40),'@example.com')) FROM {{ var("relation","hoge") }};
+{%- for i in  %}
+INSERT IGNORE INTO {{ var("relation","hoge") }}(name, age) SELECT (CONCAT(SUBSTRING(MD5(RAND()), 1, 40),'@example.com')),RAND() FROM {{ var("relation","hoge") }};
+{%- endfor %}
+SELECT * FROM {{ var("relation","hoge") }} WHERE age is NOT NULL LIMIT {{ must_var("limit") }};
+```
+
+The following SQL is executed.
+
+```sql
+CREATE DATABASE IF NOT EXISTS dev_mysqlbatch;
+USE dev_mysqlbatch;
+DROP TABLE IF EXISTS users;
+CREATE TABLE users (
+    id INTEGER auto_increment,
+    name VARCHAR(191),
+    age INTEGER,
+    PRIMARY KEY (`id`),
+    UNIQUE INDEX `name` (`name`)
+);
+INSERT IGNORE INTO users(name) VALUES(CONCAT(SUBSTRING(MD5(RAND()), 1, 40),'@example.com'));
+INSERT IGNORE INTO users(name) SELECT (CONCAT(SUBSTRING(MD5(RAND()), 1, 40),'@example.com')) FROM users;
+INSERT IGNORE INTO users(name, age) SELECT (CONCAT(SUBSTRING(MD5(RAND()), 1, 40),'@example.com')),RAND() FROM users;
+INSERT IGNORE INTO users(name, age) SELECT (CONCAT(SUBSTRING(MD5(RAND()), 1, 40),'@example.com')),RAND() FROM users;
+INSERT IGNORE INTO users(name, age) SELECT (CONCAT(SUBSTRING(MD5(RAND()), 1, 40),'@example.com')),RAND() FROM users;
+SELECT * FROM hoge WHERE age is NOT NULL LIMIT 5;
+```
+
+When executing with Lambda, the following JSON can be specified as the payload.
+
+```json
+{
+  "file": "./task_template.sql",
+  "vars": {
+    "relation": "users",
+    "limit": 5
+  }
+}
+```
+
 ## License
 
 see [LICENSE](https://github.com/mashiike/mysqlbatch/blob/master/LICENSE) file.

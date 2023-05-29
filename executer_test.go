@@ -6,6 +6,7 @@ import (
 	_ "embed"
 	"fmt"
 	"log"
+	"os"
 	"strings"
 	"sync/atomic"
 	"testing"
@@ -94,6 +95,9 @@ func diffStr(a, b string) (string, bool) {
 //go:embed testdata/test.sql
 var testSQL []byte
 
+//go:embed testdata/test_template.sql
+var testTemplateSQL []byte
+
 func TestExecuterExecute(t *testing.T) {
 	conf := mysqlbatch.NewDefaultConfig()
 	conf.Password = "mysqlbatch"
@@ -112,7 +116,37 @@ func TestExecuterExecute(t *testing.T) {
 		require.Equal(t, `SELECT * FROM users WHERE age is NOT NULL LIMIT 5`, query)
 		require.Equal(t, 5, len(rows))
 	})
-	err = e.Execute(bytes.NewReader(testSQL))
+	err = e.Execute(bytes.NewReader(testSQL), nil)
+	require.NoError(t, err)
+	log.Println("LastExecuteTime:", e.LastExecuteTime())
+	require.InDelta(t, time.Since(e.LastExecuteTime()), 0, float64(5*time.Minute))
+	require.EqualValues(t, 1, count)
+}
+
+func TestExecuterExecute__WithVars(t *testing.T) {
+	os.Setenv("ENV", "test")
+	mysqlbatch.DefaultSQLDumper = os.Stderr
+	conf := mysqlbatch.NewDefaultConfig()
+	conf.Password = "mysqlbatch"
+	conf.Location = "Asia/Tokyo"
+	e, err := mysqlbatch.New(context.Background(), conf)
+	require.NoError(t, err)
+	defer e.Close()
+
+	e.SetTimeCheckQuery("SELECT NOW()")
+	e.SetTableSelectHook(func(query, table string) {
+		t.Log(query + "\n" + table + "\n")
+	})
+	var count int32
+	e.SetSelectHook(func(query string, columns []string, rows [][]string) {
+		atomic.AddInt32(&count, 1)
+		require.Equal(t, `SELECT * FROM users WHERE age is NOT NULL LIMIT 5`, query)
+		require.Equal(t, 5, len(rows))
+	})
+	err = e.Execute(bytes.NewReader(testTemplateSQL), map[string]string{
+		"relation": "users",
+		"limit":    "5",
+	})
 	require.NoError(t, err)
 	log.Println("LastExecuteTime:", e.LastExecuteTime())
 	require.InDelta(t, time.Since(e.LastExecuteTime()), 0, float64(5*time.Minute))
