@@ -1,5 +1,11 @@
 # Changelog
 
+## [v0.6.1](https://github.com/mashiike/mysqlbatch/compare/v0.6.0...v0.6.1) - 2023-05-31
+- template rendering not escape by @mashiike in https://github.com/mashiike/mysqlbatch/pull/32
+- for debug, on error with sql by @mashiike in https://github.com/mashiike/mysqlbatch/pull/34
+- Bump github.com/stretchr/testify from 1.8.2 to 1.8.3 by @dependabot in https://github.com/mashiike/mysqlbatch/pull/31
+- Bump golang.org/x/sync from 0.1.0 to 0.2.0 by @dependabot in https://github.com/mashiike/mysqlbatch/pull/30
+
 ## [v0.6.0](https://github.com/mashiike/mysqlbatch/compare/v0.5.0...v0.6.0) - 2023-05-29
 - Bump github.com/aws/aws-sdk-go-v2/config from 1.18.19 to 1.18.25 by @dependabot in https://github.com/mashiike/mysqlbatch/pull/27
 - Bump github.com/aws/aws-lambda-go from 1.39.1 to 1.41.0 by @dependabot in https://github.com/mashiike/mysqlbatch/pull/26
