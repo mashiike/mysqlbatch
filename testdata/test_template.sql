@@ -13,5 +13,6 @@ INSERT IGNORE INTO {{ var("relation","hoge") }}(name) SELECT (CONCAT(SUBSTRING(M
 {%- for i in range(3) %}
 INSERT IGNORE INTO {{ var("relation","hoge") }}(name, age) SELECT (CONCAT(SUBSTRING(MD5(RAND()), 1, 40),'@example.com')),RAND() FROM {{ var("relation","hoge") }};
 {%- endfor %}
+UPDATE  {{ var("relation","hoge") }} SET age = age + 10 WHERE age {{ must_var('age_condition') }};
 SELECT * FROM {{ var("relation","hoge") }} WHERE age is NOT NULL LIMIT {{ must_var("limit") }};
 

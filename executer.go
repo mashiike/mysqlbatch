@@ -18,6 +18,10 @@ import (
 	"github.com/pkg/errors"
 )
 
+func init() {
+	pongo2.SetAutoescape(false)
+}
+
 var DefaultSQLDumper io.Writer = io.Discard
 
 // Executer queries the DB. There is no parallelism

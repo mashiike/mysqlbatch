@@ -144,8 +144,9 @@ func TestExecuterExecute__WithVars(t *testing.T) {
 		require.Equal(t, 5, len(rows))
 	})
 	err = e.Execute(bytes.NewReader(testTemplateSQL), map[string]string{
-		"relation": "users",
-		"limit":    "5",
+		"relation":      "users",
+		"limit":         "5",
+		"age_condition": " > 20",
 	})
 	require.NoError(t, err)
 	log.Println("LastExecuteTime:", e.LastExecuteTime())
