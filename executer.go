@@ -134,14 +134,14 @@ func (e *Executer) executeContext(ctx context.Context, queryReader io.Reader, va
 			}
 			if isSelect {
 				if err := e.queryContext(ctx, query); err != nil {
-					return errors.Wrap(err, "query rows failed")
+					return fmt.Errorf("query `%s` failed: %w", query, err)
 				}
 				continue
 			}
 		}
 		result, err := e.db.ExecContext(ctx, query)
 		if err != nil {
-			return errors.Wrap(err, "execute query failed")
+			return fmt.Errorf("execute query `%s` failed: %w", query, err)
 		}
 		if e.executeHook != nil {
 			lastInsertId, err := result.LastInsertId()
