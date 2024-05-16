@@ -1,5 +1,13 @@
 # Changelog
 
+## [v0.7.0](https://github.com/mashiike/mysqlbatch/compare/v0.6.1...v0.7.0) - 2024-05-16
+- Modernize CI/CD by @mashiike in https://github.com/mashiike/mysqlbatch/pull/54
+- update go runtime 1.22.3 and go moduels by @mashiike in https://github.com/mashiike/mysqlbatch/pull/63
+- Bump actions/setup-go from 4 to 5 by @dependabot in https://github.com/mashiike/mysqlbatch/pull/57
+- Bump actions/checkout from 3 to 4 by @dependabot in https://github.com/mashiike/mysqlbatch/pull/56
+- add MYSQLBATCH_PASSWORD_SSM_PARAMETER_JSON_KEY  by @mashiike in https://github.com/mashiike/mysqlbatch/pull/64
+- Bump github.com/stretchr/testify from 1.8.3 to 1.9.0 by @dependabot in https://github.com/mashiike/mysqlbatch/pull/62
+
 ## [v0.6.1](https://github.com/mashiike/mysqlbatch/compare/v0.6.0...v0.6.1) - 2023-05-31
 - template rendering not escape by @mashiike in https://github.com/mashiike/mysqlbatch/pull/32
 - for debug, on error with sql by @mashiike in https://github.com/mashiike/mysqlbatch/pull/34
