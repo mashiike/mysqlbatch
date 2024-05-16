@@ -228,7 +228,7 @@ func (e *Executer) SetTableSelectHook(hook func(query, table string)) {
 	}
 }
 
-func (e *Executer) newPongo2Ctx(ctx context.Context, vars map[string]string) pongo2.Context {
+func (e *Executer) newPongo2Ctx(_ context.Context, vars map[string]string) pongo2.Context {
 	pongo2Ctx := pongo2.Context{
 		"var": func(key string, defaultValue string) string {
 			if v, ok := vars[key]; ok {
