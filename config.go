@@ -2,6 +2,7 @@ package mysqlbatch
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/url"
@@ -28,8 +29,9 @@ type Config struct {
 	Database string
 	Location string
 
-	PasswordSSMParameterName string
-	Fetcher                  *SSMParameterFetcher
+	PasswordSSMParameterName    string
+	PasswordSSMParameterJSONKey string
+	Fetcher                     *SSMParameterFetcher
 }
 
 type SSMParameterFetcher struct {
@@ -59,7 +61,7 @@ func (c *Config) GetDSN(ctx context.Context) (string, error) {
 	password := c.Password
 	if c.needToRetrievePasswordRemotely() {
 		var err error
-		password, err = c.Fetcher.Fetch(ctx, c.PasswordSSMParameterName)
+		password, err = c.Fetcher.Fetch(ctx, c.PasswordSSMParameterName, c.PasswordSSMParameterJSONKey)
 		if err != nil {
 			return "", err
 		}
@@ -84,19 +86,19 @@ func (c *Config) needToRetrievePasswordRemotely() bool {
 	return c.Password == "" && c.PasswordSSMParameterName != ""
 }
 
-func (f *SSMParameterFetcher) Fetch(ctx context.Context, parameterName string) (string, error) {
+func (f *SSMParameterFetcher) Fetch(ctx context.Context, parameterName string, parameterJSONKey string) (string, error) {
 
 	if password, ok := f.fetchFromCache(parameterName); ok {
 		return password, nil
 	}
-	password, err := f.fetchFromRemote(ctx, parameterName)
+	password, err := f.fetchFromRemote(ctx, parameterName, parameterJSONKey)
 	if err != nil {
 		return "", fmt.Errorf("getFromRemote: %w", err)
 	}
 	return password, nil
 }
 
-func (f *SSMParameterFetcher) fetchFromRemote(ctx context.Context, parameterName string) (string, error) {
+func (f *SSMParameterFetcher) fetchFromRemote(ctx context.Context, parameterName string, parameterJSONKey string) (string, error) {
 	v, err, _ := f.g.Do("fetchRemote", func() (interface{}, error) {
 		if f.ssmClient == nil {
 			awsConf, err := config.LoadDefaultConfig(ctx, f.LoadAWSDefaultConfigOptions...)
@@ -115,8 +117,25 @@ func (f *SSMParameterFetcher) fetchFromRemote(ctx context.Context, parameterName
 		if err != nil {
 			return nil, err
 		}
-		f.setToCache(parameterName, *output.Parameter.Value)
-		return *output.Parameter.Value, nil
+		value := *output.Parameter.Value
+		if json.Valid([]byte(value)) && parameterJSONKey != "" {
+			log.Println("ssm parameter value is json, try to parse it")
+			var m map[string]interface{}
+			if err := json.Unmarshal([]byte(value), &m); err != nil {
+				return nil, err
+			}
+			if v, ok := m[parameterJSONKey]; ok {
+				if password, ok := v.(string); ok {
+					value = password
+				} else {
+					return nil, fmt.Errorf("ssm parameter value is json, but `%s` key is not string", parameterJSONKey)
+				}
+			} else {
+				return nil, fmt.Errorf("ssm parameter value is json, but `%s` key is not found", parameterJSONKey)
+			}
+		}
+		f.setToCache(parameterName, value)
+		return value, nil
 	})
 	if err != nil {
 		return "", err

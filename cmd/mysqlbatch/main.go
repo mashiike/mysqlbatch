@@ -45,6 +45,7 @@ func main() {
 	flag.StringVar(&conf.Host, "host", "", "")
 	flag.StringVar(&conf.Location, "location", "", "timezone of mysql database system")
 	flag.StringVar(&conf.PasswordSSMParameterName, "password-ssm-parameter-name", "", "pasword ssm parameter name")
+	flag.StringVar(&conf.PasswordSSMParameterJSONKey, "password-ssm-parameter-json-key", "", "pasword ssm parameter json key")
 	flag.Var(&vars, "var", "set variable (format: key=value)")
 	flag.VisitAll(flagx.EnvToFlagWithPrefix("MYSQLBATCH_"))
 	flag.Parse()
