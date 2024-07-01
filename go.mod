@@ -7,10 +7,10 @@ toolchain go1.22.3
 require (
 	github.com/Songmu/flextime v0.1.0
 	github.com/aws/aws-lambda-go v1.41.0
-	github.com/aws/aws-sdk-go-v2 v1.26.2
+	github.com/aws/aws-sdk-go-v2 v1.30.1
 	github.com/aws/aws-sdk-go-v2/config v1.27.14
 	github.com/aws/aws-sdk-go-v2/service/ssm v1.50.2
-	github.com/aws/smithy-go v1.20.2
+	github.com/aws/smithy-go v1.20.3
 	github.com/flosch/pongo2/v6 v6.0.0
 	github.com/go-sql-driver/mysql v1.8.1
 	github.com/ken39arg/go-flagx v0.0.0-20220608183922-7cf7c6c0093c
