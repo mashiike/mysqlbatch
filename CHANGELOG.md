@@ -1,5 +1,8 @@
 # Changelog
 
+## [v0.7.1](https://github.com/mashiike/mysqlbatch/compare/v0.7.0...v0.7.1) - 2025-02-18
+- Bump the aws-sdk-go-v2 group across 1 directory with 2 updates by @dependabot in https://github.com/mashiike/mysqlbatch/pull/86
+
 ## [v0.7.0](https://github.com/mashiike/mysqlbatch/compare/v0.6.1...v0.7.0) - 2024-05-16
 - Modernize CI/CD by @mashiike in https://github.com/mashiike/mysqlbatch/pull/54
 - update go runtime 1.22.3 and go moduels by @mashiike in https://github.com/mashiike/mysqlbatch/pull/63
